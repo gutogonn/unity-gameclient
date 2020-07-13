@@ -1,11 +1,11 @@
-using Project.Utils;
+using NodeNetwork.Utility;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using SocketIO;
 
 namespace NodeNetwork {
-    public class NetworkSerialize : MonoBehaviour {
+    public class NetworkIdentity : MonoBehaviour {
         [SerializeField]
         [GreyOut]
         private string id;
@@ -21,21 +21,22 @@ namespace NodeNetwork {
 
         public void SetControllerId(string id) {
             this.id = id;
-            this.isControlling = (NetworkClient.clientId == id) ? true : false;
-            
-            //mudar cor do player cliente, amarelo caso for cliente, branco caso for outros players
-            GetComponent<SpriteRenderer>().color = (NetworkClient.clientId == id) ? Color.yellow : Color.white;
+            isControlling = (NetworkClient.clientId == id) ? true : false;
         }
 
-        public void SetSocketReference(SocketIOComponent socket) {
-            this.socket = socket;
+        public void SetSocketReference(SocketIOComponent Socket){
+            socket = Socket;
         }
 
-        public bool IsControlling() {
+        public string GetID(){
+            return id;
+        }
+
+        public bool IsControlling(){
             return isControlling;
         }
 
-        public SocketIOComponent GetSocket() {
+        public SocketIOComponent GetSocket(){
             return socket;
         }
     }

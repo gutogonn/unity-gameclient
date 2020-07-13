@@ -5,13 +5,7 @@ using SocketIO;
 
 namespace NodeNetwork {
     public class NetworkClient : SocketIOComponent {
-        [SerializeField]
-        private Transform networkContainer;
-
-        private Dictionary<string, NetworkSerialize> networkObjects;
-
-        [SerializeField]
-        private GameObject playerPrefab;
+        private Dictionary<string, NetworkIdentity> serverObjects;
 
         public static string clientId { get; private set; }
 
@@ -19,7 +13,7 @@ namespace NodeNetwork {
         public override void Start() {
             base.Start();
             init();
-            configEvents();
+            networkEvents();
         }
 
         // Update is called once per frame
@@ -28,45 +22,43 @@ namespace NodeNetwork {
         }
 
         private void init() {
-            networkObjects = new Dictionary<string, NetworkSerialize>();
+            serverObjects = new Dictionary<string, NetworkIdentity>();
         }
 
-        private void configEvents() {
+        private void networkEvents() {
             On("open", (e) => {
-                //CUIDADO aqui roda 2x mas ele sempre vai fazer uma conexão!
-                Debug.Log("Connectado");
+                //CUIDADO aqui roda 2 vezes mas estabelece apenas uma conexão!
+                Debug.Log("Conexão feita");
             });
 
             On("register", (e) => {
                 clientId = e.data["id"].ToString().Replace("\"", "");
-                Debug.Log("ClientID " + clientId);
+                Debug.Log("ID: " + clientId);
             });
 
             On("spawn", (e) => {
                 string id = e.data["id"].ToString().Replace("\"", "");
-                GameObject go = Instantiate(playerPrefab, networkContainer);
-                go.name = string.Format("Player - ({0})", id);
-                NetworkSerialize network = go.GetComponent<NetworkSerialize>();
-                network.SetControllerId(id);
-                network.SetSocketReference(this);
-                networkObjects.Add(id, network);
+                GameObject networkObject = (GameObject)Instantiate(Resources.Load("Player"), gameObject.transform);
+                networkObject.name = string.Format("Player - ({0})", id);
+                NetworkIdentity networkIdentity = networkObject.GetComponent<NetworkIdentity>();
+                networkIdentity.SetControllerId(id);
+                networkIdentity.SetSocketReference(this);
+                serverObjects.Add(id, networkIdentity);
             });
 
             On("disconnected", (e) => {
                 string id = e.data["id"].ToString().Replace("\"", "");
-
-                GameObject go = networkObjects[id].gameObject;
-                Destroy(go);
-                networkObjects.Remove(id);
+                GameObject networkObject = serverObjects[id].gameObject;
+                Destroy(networkObject);
+                serverObjects.Remove(id);
             });
 
             On("updatePosition", (e) => {
                 string id = e.data["id"].ToString().Replace("\"", "");
                 float x = e.data["position"]["x"].f;
                 float y = e.data["position"]["y"].f;
-
-                NetworkSerialize network = networkObjects[id];
-                network.transform.position = new Vector3(x, y, 0);
+                NetworkIdentity networkIdentity = serverObjects[id];
+                networkIdentity.transform.position = new Vector3(x, y, 0);
             });
         }
     }
